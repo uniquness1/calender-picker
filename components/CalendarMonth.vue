@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-7 gap-1">
+  <div class="grid grid-cols-7 gap-y-0.5">
     <div
       v-for="day in weekDays"
       :key="day"
@@ -7,9 +7,10 @@
     >
       {{ day }}
     </div>
-    <section v-for="(date, index) in monthDays" :key="index">
+
+    <div v-for="(date, index) in monthDays" :key="index">
       <div
-        class="w-10 h-10 relative flex items-center justify-center"
+        class="w-10 h-10 flex items-center justify-center relative"
         :class="getDayClasses(date)"
         @click="date && $emit('select-date', date)"
       >
@@ -19,12 +20,12 @@
           class="absolute bottom-1 w-1 h-1 bg-black rounded-full"
         />
       </div>
-    </section>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from "vue";
+import { computed } from "vue";
 
 const props = defineProps({
   month: Date,
@@ -38,6 +39,7 @@ defineEmits({
 });
 
 const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
 const monthDays = computed(() => {
   const days = [];
   const firstDay = new Date(
@@ -50,38 +52,62 @@ const monthDays = computed(() => {
     props.month.getMonth() + 1,
     0
   );
+
   for (let i = 0; i < firstDay.getDay(); i++) {
     days.push(null);
   }
+
   for (let i = 1; i <= lastDay.getDate(); i++) {
     days.push(new Date(props.month.getFullYear(), props.month.getMonth(), i));
   }
+
   return days;
 });
+
+const hasSelectedRange = computed(() => {
+  return props.selectedStartDate && props.selectedEndDate;
+});
+
 const isCurrentDate = (date) => {
   return date
     ? date.toDateString() === props.currentDate.toDateString()
     : false;
 };
+
 const isInRange = (date) => {
   if (!date || !props.selectedStartDate || !props.selectedEndDate) return false;
-  return date >= props.selectedStartDate && date <= props.selectedEndDate;
+  return date > props.selectedStartDate && date < props.selectedEndDate;
 };
-const isSelected = (date) => {
-  if (!date || !props.selectedStartDate) return false;
-  const isStart =
-    date.toDateString() === props.selectedStartDate.toDateString();
-  const isEnd =
+
+const isStartDate = (date) => {
+  return (
+    date &&
+    props.selectedStartDate &&
+    date.toDateString() === props.selectedStartDate.toDateString()
+  );
+};
+
+const isEndDate = (date) => {
+  return (
+    date &&
     props.selectedEndDate &&
-    date.toDateString() === props.selectedEndDate.toDateString();
-  return isStart || isEnd;
+    date.toDateString() === props.selectedEndDate.toDateString()
+  );
 };
+
 const getDayClasses = (date) => {
   if (!date) return "invisible";
+
   return {
-    "cursor-pointer text-sm hover:bg-[#f3f3f3] rounded-[10px]": true,
-    "bg-[#171717] text-white": isSelected(date),
-    "bg-[#f3f3f3]": isInRange(date) && !isSelected(date),
+    "cursor-pointer text-sm hover:bg-[#f3f3f3] hover:text-[#171717] rounded-[10px]": true,
+    "bg-[#171717] text-white rounded-l-[10px]":
+      isStartDate(date) && !isEndDate(date),
+    "bg-[#171717] text-white rounded-r-[10px]":
+      isEndDate(date) && !isStartDate(date),
+    "bg-[#171717] text-white rounded-[10px]":
+      isStartDate(date) && isEndDate(date),
+    "bg-[#f3f3f3] text-[#171717]": isInRange(date),
+    "rounded-none": isInRange(date),
   };
 };
 </script>
